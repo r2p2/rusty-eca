@@ -41,11 +41,12 @@ impl App {
         self.gl.draw(args.viewport(), |c, gl| {
             clear(GREEN, gl);
 
-            for y in 0..lines.len() {
-                for x in 0..lines[0].len() {
-                    if ! lines[y][x] {
-                        continue;
+            for (y, line) in lines.iter().enumerate() {
+                for (x, cell) in line.iter().enumerate() {
+                    if ! cell {
+                        continue
                     }
+
                     let transform = c.transform.trans(x as f64, y as f64);
                     rectangle(RED, pixel, transform, gl);
                 }
@@ -59,11 +60,8 @@ impl App {
         }
 
         for y in 0..self.lines.len()-1 {
-            for x in 0..self.lines[0].len() {
-                self.lines[y][x] = self.lines[y+1][x];
-            }
+            self.lines[y] = self.lines[y+1].clone();
         }
-
 
         let last_line = self.lines.last_mut().expect("");
         let mut new_line = last_line.clone();
@@ -106,7 +104,7 @@ fn main() {
         width: 0,
         height: 0,
         lines: vec!(vec!(false; 0); 0),
-        rule: 22,
+        rule: 150,
     };
 
     let mut events = Events::new(EventSettings::new());
