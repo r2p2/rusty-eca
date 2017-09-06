@@ -2,12 +2,14 @@ extern crate piston;
 extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
+extern crate palette;
 
 use piston::window::WindowSettings;
 use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
+use palette::{ Rgb, Hue, IntoColor };
 
 type Line = Vec<bool>;
 type Lines = Vec<Line>;
@@ -18,6 +20,7 @@ pub struct App {
     height: u32,
     lines: Lines,
     rule: u8,
+    color: Rgb,
 }
 
 impl App {
@@ -31,15 +34,16 @@ impl App {
 
         use graphics::*;
 
-        const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
-        const RED:   [f32; 4] = [1.0, 0.0, 0.0, 1.0];
+        let fg: Rgb = self.color.into_hsl().shift_hue(180.0.into()).into_rgb();
 
+        let bg_color: [f32; 4] = [self.color.red, self.color.green, self.color.blue, 1.0];
+        let fg_color: [f32; 4] = [fg.red        , fg.green        , fg.blue        , 1.0];
 
         let pixel = rectangle::square(0.0, 0.0, 1.0);
         let lines = &self.lines;
 
         self.gl.draw(args.viewport(), |c, gl| {
-            clear(GREEN, gl);
+            clear(bg_color, gl);
 
             for (y, line) in lines.iter().enumerate() {
                 for (x, cell) in line.iter().enumerate() {
@@ -48,7 +52,7 @@ impl App {
                     }
 
                     let transform = c.transform.trans(x as f64, y as f64);
-                    rectangle(RED, pixel, transform, gl);
+                    rectangle(fg_color, pixel, transform, gl);
                 }
             }
         });
@@ -79,6 +83,9 @@ impl App {
         }
 
         *last_line = new_line;
+
+        self.color = self.color.into_hsl().shift_hue(0.5.into()).into_rgb();
+
     }
 
     fn reset_lines(lines: &mut Lines, width: u32, height: u32) {
@@ -104,7 +111,8 @@ fn main() {
         width: 0,
         height: 0,
         lines: vec!(vec!(false; 0); 0),
-        rule: 150,
+        rule: 22,
+        color: Rgb::new(1.0, 0.0, 0.0),
     };
 
     let mut events = Events::new(EventSettings::new());
