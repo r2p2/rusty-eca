@@ -21,15 +21,16 @@ pub struct App {
     lines: Lines,
     rule: u8,
     color: Rgb,
+    cell_size: u32,
 }
 
 impl App {
 
     fn render(&mut self, args: &RenderArgs) {
         if self.width != args.width || self.height != args.height {
-            Self::reset_lines(&mut self.lines, args.width, args.height);
             self.width = args.width;
             self.height = args.height;
+            Self::reset_lines(&mut self.lines, self.cell_size, args.width, args.height);
         }
 
         use graphics::*;
@@ -39,8 +40,9 @@ impl App {
         let bg_color: [f32; 4] = [self.color.red, self.color.green, self.color.blue, 1.0];
         let fg_color: [f32; 4] = [fg.red        , fg.green        , fg.blue        , 1.0];
 
-        let pixel = rectangle::square(0.0, 0.0, 1.0);
+        let pixel = rectangle::square(0.0, 0.0, self.cell_size as f64);
         let lines = &self.lines;
+        let cell_size = self.cell_size as usize;
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(bg_color, gl);
@@ -51,7 +53,7 @@ impl App {
                         continue
                     }
 
-                    let transform = c.transform.trans(x as f64, y as f64);
+                    let transform = c.transform.trans((x*cell_size) as f64, (y*cell_size) as f64);
                     rectangle(fg_color, pixel, transform, gl);
                 }
             }
@@ -88,10 +90,10 @@ impl App {
 
     }
 
-    fn reset_lines(lines: &mut Lines, width: u32, height: u32) {
+    fn reset_lines(lines: &mut Lines, cell_size: u32, width: u32, height: u32) {
         lines.clear();
-        *lines = vec!(vec!(false; width as usize); height as usize);
-        lines[(height-1) as usize][(width/2) as usize] = true;
+        *lines = vec!(vec!(false; (width/cell_size) as usize); (height/cell_size) as usize);
+        lines[(height/cell_size-1) as usize][(width/cell_size/2) as usize] = true;
     }
 }
 
@@ -111,8 +113,9 @@ fn main() {
         width: 0,
         height: 0,
         lines: vec!(vec!(false; 0); 0),
-        rule: 22,
+        rule: 33,
         color: Rgb::new(1.0, 0.0, 0.0),
+        cell_size: 5,
     };
 
     let mut events = Events::new(EventSettings::new());
