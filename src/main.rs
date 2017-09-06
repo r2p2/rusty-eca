@@ -9,34 +9,84 @@ use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
 
+type Line = Vec<bool>;
+type Lines = Vec<Line>;
+
 pub struct App {
     gl: GlGraphics,
-    rotation: f64
+    width: u32,
+    height: u32,
+    lines: Lines,
+    rule: u8,
 }
 
 impl App {
+
     fn render(&mut self, args: &RenderArgs) {
+        if self.width != args.width || self.height != args.height {
+            Self::reset_lines(&mut self.lines, args.width, args.height);
+            self.width = args.width;
+            self.height = args.height;
+        }
+
         use graphics::*;
 
         const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
         const RED:   [f32; 4] = [1.0, 0.0, 0.0, 1.0];
 
-        let square   = rectangle::square(0.0, 0.0, 50.0);
-        let rotation = self.rotation;
-        let (x, y)   = ( (args.width / 2) as f64, (args.height / 2) as f64 );
+
+        let pixel = rectangle::square(0.0, 0.0, 1.0);
+        let lines = &self.lines;
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(GREEN, gl);
-            let transform = c.transform.trans(x, y)
-                .rot_rad(rotation)
-                .trans(-25.0, -25.0);
 
-            rectangle(RED, square, transform, gl);
+            for y in 0..lines.len() {
+                for x in 0..lines[0].len() {
+                    if ! lines[y][x] {
+                        continue;
+                    }
+                    let transform = c.transform.trans(x as f64, y as f64);
+                    rectangle(RED, pixel, transform, gl);
+                }
+            }
         });
     }
 
-    fn update(&mut self, args: &UpdateArgs) {
-        self.rotation += 2.0 * args.dt;
+    fn update(&mut self, _args: &UpdateArgs) {
+        if self.lines.len() < 2 {
+            return;
+        }
+
+        for y in 0..self.lines.len()-1 {
+            for x in 0..self.lines[0].len() {
+                self.lines[y][x] = self.lines[y+1][x];
+            }
+        }
+
+
+        let last_line = self.lines.last_mut().expect("");
+        let mut new_line = last_line.clone();
+
+        for x in 1..last_line.len()-1 {
+            let l = last_line[x-1] as u8;
+            let m = last_line[x] as u8;
+            let r = last_line[x+1] as u8;
+            let sig = (l << 2) | (m << 1) | r ;
+            new_line[x] = if (self.rule & (1 << sig)) > 0 {
+                true
+            } else {
+                false
+            }
+        }
+
+        *last_line = new_line;
+    }
+
+    fn reset_lines(lines: &mut Lines, width: u32, height: u32) {
+        lines.clear();
+        *lines = vec!(vec!(false; width as usize); height as usize);
+        lines[(height-1) as usize][(width/2) as usize] = true;
     }
 }
 
@@ -53,7 +103,10 @@ fn main() {
 
     let mut app = App {
         gl: GlGraphics::new(opengl),
-        rotation: 0.0
+        width: 0,
+        height: 0,
+        lines: vec!(vec!(false; 0); 0),
+        rule: 22,
     };
 
     let mut events = Events::new(EventSettings::new());
