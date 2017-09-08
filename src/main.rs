@@ -2,6 +2,7 @@ extern crate piston;
 extern crate graphics;
 extern crate glutin_window;
 extern crate opengl_graphics;
+extern crate fps_counter;
 extern crate palette;
 
 use piston::window::WindowSettings;
@@ -9,7 +10,9 @@ use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{ GlGraphics, OpenGL };
+use fps_counter::FPSCounter;
 use palette::{ Rgb, Hue, IntoColor };
+use std::time::{ Duration, Instant };
 
 type Line = Vec<bool>;
 type Lines = Vec<Line>;
@@ -22,6 +25,8 @@ pub struct App {
     rule: u8,
     color: Rgb,
     cell_size: u32,
+    update_timeout: Instant,
+    _fps: FPSCounter,
 }
 
 impl App {
@@ -61,6 +66,12 @@ impl App {
     }
 
     fn update(&mut self, _args: &UpdateArgs) {
+        let now = Instant::now();
+        if self.update_timeout > now {
+            return;
+        }
+        self.update_timeout = now + Duration::from_millis(30);
+
         if self.lines.len() < 2 {
             return;
         }
@@ -87,7 +98,6 @@ impl App {
         *last_line = new_line;
 
         self.color = self.color.into_hsl().shift_hue(0.5.into()).into_rgb();
-
     }
 
     fn reset_lines(lines: &mut Lines, cell_size: u32, width: u32, height: u32) {
@@ -113,9 +123,11 @@ fn main() {
         width: 0,
         height: 0,
         lines: vec!(vec!(false; 0); 0),
-        rule: 33,
+        rule: 150,
         color: Rgb::new(1.0, 0.0, 0.0),
         cell_size: 5,
+        update_timeout: Instant::now(),
+        _fps: FPSCounter::new(),
     };
 
     let mut events = Events::new(EventSettings::new());
