@@ -1,5 +1,5 @@
 [package]
-name = "get-started"
+name = "rusty-eca"
 version = "0.1.0"
 authors = ["Robert Peters <robert.peters.dd@gmail.com>"]
 

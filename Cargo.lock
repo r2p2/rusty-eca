@@ -1,5 +1,5 @@
 [root]
-name = "get-started"
+name = "rusty-eca"
 version = "0.1.0"
 dependencies = [
  "palette 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
