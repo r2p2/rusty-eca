@@ -43,21 +43,22 @@ impl CA {
     }
 
     pub fn update(&mut self) {
-        for y in 0..self.grid.len()-1 {
-            self.grid[y] = self.grid[y+1].clone();
+        let width = self.width();
+        let height = self.height();
+
+        for y in 0..height-1 {
+            self.grid.swap(y, y+1);
         }
 
-        let last_row = self.grid.last_mut().expect("");
-        let mut new_row = last_row.clone();
+        let (last_row, rest_rows) = self.grid.split_last_mut().unwrap();
+        let (second_last_row, _) = rest_rows.split_last().unwrap();
 
-        for x in 1..last_row.len()-1 {
-            let l = last_row[x-1] as u8;
-            let m = last_row[x] as u8;
-            let r = last_row[x+1] as u8;
-            let sig = (l << 2) | (m << 1) | r ;
-            new_row[x] = (self.rule & (1 << sig)) > 0;
+        for (i, cell) in last_row.iter_mut().enumerate().take(width-1).skip(1) {
+            let mut value = 0u8;
+            for (n, old_cell) in second_last_row.iter().skip(i-1).take(3).enumerate() {
+                value |= (*old_cell as u8) << (2 - n);
+            }
+            *cell = self.rule & (1 << value) > 0;
         }
-
-        *last_row = new_row;
     }
 }

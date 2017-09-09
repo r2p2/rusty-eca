@@ -95,7 +95,7 @@ fn main() {
     let mut app = App {
         ca: CA::new(2, 2, 0).unwrap(),
         cell_size: 5,
-        
+
         gl: GlGraphics::new(opengl),
         color: Rgb::new(1.0, 0.0, 0.0),
         update_timeout: Instant::now(),
