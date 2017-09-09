@@ -11,10 +11,10 @@ use piston::window::WindowSettings;
 use piston::event_loop::*;
 use piston::input::*;
 use glutin_window::GlutinWindow as Window;
-use opengl_graphics::{ GlGraphics, OpenGL };
+use opengl_graphics::{GlGraphics, OpenGL};
 use fps_counter::FPSCounter;
-use palette::{ Rgb, Hue, IntoColor };
-use std::time::{ Duration, Instant };
+use palette::{Rgb, Hue, IntoColor};
+use std::time::{Duration, Instant};
 
 use ca::CA;
 
@@ -29,25 +29,24 @@ pub struct App {
 }
 
 impl App {
-
     fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
-        let exp_width = (args.width/self.cell_size) as usize;
+        let exp_width = (args.width / self.cell_size) as usize;
         let width_ok = exp_width == self.ca.width();
-        let exp_height = (args.height/self.cell_size) as usize;
+        let exp_height = (args.height / self.cell_size) as usize;
         let height_ok = exp_height == self.ca.height();
 
-        if ! width_ok || ! height_ok {
+        if !width_ok || !height_ok {
             self.ca = CA::new(exp_width, exp_height, 150).unwrap();
-            self.ca.fill(exp_width/2, exp_height-1);
+            self.ca.fill(exp_width / 2, exp_height - 1);
         }
 
 
         let fg: Rgb = self.color.into_hsl().shift_hue(180.0.into()).into_rgb();
 
         let bg_color: [f32; 4] = [self.color.red, self.color.green, self.color.blue, 1.0];
-        let fg_color: [f32; 4] = [fg.red        , fg.green        , fg.blue        , 1.0];
+        let fg_color: [f32; 4] = [fg.red, fg.green, fg.blue, 1.0];
 
         let pixel = rectangle::square(0.0, 0.0, self.cell_size as f64);
 
@@ -59,11 +58,14 @@ impl App {
 
             for (y, row) in grid.iter().enumerate() {
                 for (x, cell) in row.iter().enumerate() {
-                    if ! cell {
-                        continue
+                    if !cell {
+                        continue;
                     }
 
-                    let transform = c.transform.trans((x*cell_size) as f64, (y*cell_size) as f64);
+                    let transform = c.transform.trans(
+                        (x * cell_size) as f64,
+                        (y * cell_size) as f64,
+                    );
                     rectangle(fg_color, pixel, transform, gl);
                 }
             }
@@ -84,9 +86,7 @@ impl App {
 fn main() {
     let opengl = OpenGL::V3_2;
 
-    let mut window: Window = WindowSettings::new(
-        "spinning square",
-        [200, 200])
+    let mut window: Window = WindowSettings::new("spinning square", [200, 200])
         .opengl(opengl)
         .exit_on_esc(true)
         .build()
