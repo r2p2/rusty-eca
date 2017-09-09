@@ -1,3 +1,5 @@
+mod ca;
+
 extern crate piston;
 extern crate graphics;
 extern crate glutin_window;
@@ -14,17 +16,14 @@ use fps_counter::FPSCounter;
 use palette::{ Rgb, Hue, IntoColor };
 use std::time::{ Duration, Instant };
 
-type Line = Vec<bool>;
-type Lines = Vec<Line>;
+use ca::CA;
 
 pub struct App {
-    gl: GlGraphics,
-    width: u32,
-    height: u32,
-    lines: Lines,
-    rule: u8,
-    color: Rgb,
+    ca: CA,
     cell_size: u32,
+
+    gl: GlGraphics,
+    color: Rgb,
     update_timeout: Instant,
     _fps: FPSCounter,
 }
@@ -32,13 +31,18 @@ pub struct App {
 impl App {
 
     fn render(&mut self, args: &RenderArgs) {
-        if self.width != args.width || self.height != args.height {
-            self.width = args.width;
-            self.height = args.height;
-            Self::reset_lines(&mut self.lines, self.cell_size, args.width, args.height);
+        use graphics::*;
+
+        let exp_width = (args.width/self.cell_size) as usize;
+        let width_ok = exp_width == self.ca.width();
+        let exp_height = (args.height/self.cell_size) as usize;
+        let height_ok = exp_height == self.ca.height();
+
+        if ! width_ok || ! height_ok {
+            self.ca = CA::new(exp_width, exp_height, 150).unwrap();
+            self.ca.fill(exp_width/2, exp_height-1);
         }
 
-        use graphics::*;
 
         let fg: Rgb = self.color.into_hsl().shift_hue(180.0.into()).into_rgb();
 
@@ -46,14 +50,15 @@ impl App {
         let fg_color: [f32; 4] = [fg.red        , fg.green        , fg.blue        , 1.0];
 
         let pixel = rectangle::square(0.0, 0.0, self.cell_size as f64);
-        let lines = &self.lines;
+
         let cell_size = self.cell_size as usize;
+        let grid = &self.ca.grid();
 
         self.gl.draw(args.viewport(), |c, gl| {
             clear(bg_color, gl);
 
-            for (y, line) in lines.iter().enumerate() {
-                for (x, cell) in line.iter().enumerate() {
+            for (y, row) in grid.iter().enumerate() {
+                for (x, cell) in row.iter().enumerate() {
                     if ! cell {
                         continue
                     }
@@ -71,39 +76,8 @@ impl App {
             return;
         }
         self.update_timeout = now + Duration::from_millis(30);
-
-        if self.lines.len() < 2 {
-            return;
-        }
-
-        for y in 0..self.lines.len()-1 {
-            self.lines[y] = self.lines[y+1].clone();
-        }
-
-        let last_line = self.lines.last_mut().expect("");
-        let mut new_line = last_line.clone();
-
-        for x in 1..last_line.len()-1 {
-            let l = last_line[x-1] as u8;
-            let m = last_line[x] as u8;
-            let r = last_line[x+1] as u8;
-            let sig = (l << 2) | (m << 1) | r ;
-            new_line[x] = if (self.rule & (1 << sig)) > 0 {
-                true
-            } else {
-                false
-            }
-        }
-
-        *last_line = new_line;
-
         self.color = self.color.into_hsl().shift_hue(0.5.into()).into_rgb();
-    }
-
-    fn reset_lines(lines: &mut Lines, cell_size: u32, width: u32, height: u32) {
-        lines.clear();
-        *lines = vec!(vec!(false; (width/cell_size) as usize); (height/cell_size) as usize);
-        lines[(height/cell_size-1) as usize][(width/cell_size/2) as usize] = true;
+        self.ca.update();
     }
 }
 
@@ -119,13 +93,11 @@ fn main() {
         .unwrap();
 
     let mut app = App {
-        gl: GlGraphics::new(opengl),
-        width: 0,
-        height: 0,
-        lines: vec!(vec!(false; 0); 0),
-        rule: 150,
-        color: Rgb::new(1.0, 0.0, 0.0),
+        ca: CA::new(2, 2, 0).unwrap(),
         cell_size: 5,
+        
+        gl: GlGraphics::new(opengl),
+        color: Rgb::new(1.0, 0.0, 0.0),
         update_timeout: Instant::now(),
         _fps: FPSCounter::new(),
     };
