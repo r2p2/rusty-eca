@@ -25,6 +25,7 @@ pub struct App {
     gl: GlGraphics,
     color: Rgb,
     update_timeout: Instant,
+    color_timeout: Instant,
     _fps: FPSCounter,
 }
 
@@ -73,13 +74,30 @@ impl App {
     }
 
     fn update(&mut self, _args: &UpdateArgs) {
+        self.update_grid();
+        self.update_color();
+    }
+
+    fn update_grid(&mut self) {
         let now = Instant::now();
+
         if self.update_timeout > now {
             return;
         }
         self.update_timeout = now + Duration::from_millis(30);
-        self.color = self.color.into_hsl().shift_hue(0.5.into()).into_rgb();
+
         self.ca.update();
+    }
+
+    fn update_color(&mut self) {
+        let now = Instant::now();
+
+        if self.color_timeout > now {
+            return;
+        }
+        self.color_timeout = now + Duration::from_millis(10);
+
+        self.color = self.color.into_hsl().shift_hue(0.5.into()).into_rgb();
     }
 }
 
@@ -99,6 +117,7 @@ fn main() {
         gl: GlGraphics::new(opengl),
         color: Rgb::new(1.0, 0.0, 0.0),
         update_timeout: Instant::now(),
+        color_timeout: Instant::now(),
         _fps: FPSCounter::new(),
     };
 
