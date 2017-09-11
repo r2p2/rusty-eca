@@ -18,6 +18,10 @@ impl CA {
         })
     }
 
+    pub fn rule(&self) -> u8 {
+        self.rule
+    }
+
     pub fn grid(&self) -> &Grid {
         &self.grid
     }

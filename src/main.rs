@@ -10,6 +10,7 @@ extern crate palette;
 use piston::window::WindowSettings;
 use piston::event_loop::*;
 use piston::input::*;
+use piston::input::Button::*;
 use glutin_window::GlutinWindow as Window;
 use opengl_graphics::{GlGraphics, OpenGL};
 use fps_counter::FPSCounter;
@@ -21,6 +22,7 @@ use ca::CA;
 pub struct App {
     ca: CA,
     cell_size: u32,
+    rule: u8,
 
     gl: GlGraphics,
     color: Rgb,
@@ -30,16 +32,29 @@ pub struct App {
 }
 
 impl App {
+    fn key_pressed(&mut self, key: &Key) {
+        match *key {
+            Key::Up => {
+                self.rule = (self.rule + 1) % 255;
+            },
+            Key::Down => {
+                self.rule = (self.rule - 1) % 255;
+            }
+            _ => {}
+        }
+    }
+
     fn render(&mut self, args: &RenderArgs) {
         use graphics::*;
 
+        let ca_rule = self.ca.rule();
         let exp_width = (args.width / self.cell_size) as usize;
         let width_ok = exp_width == self.ca.width();
         let exp_height = (args.height / self.cell_size) as usize;
         let height_ok = exp_height == self.ca.height();
 
-        if !width_ok || !height_ok {
-            self.ca = CA::new(exp_width, exp_height, 150).unwrap();
+        if !width_ok || !height_ok || self.rule != ca_rule {
+            self.ca = CA::new(exp_width, exp_height, self.rule).unwrap();
             self.ca.fill(exp_width / 2, exp_height - 1);
         }
 
@@ -113,6 +128,7 @@ fn main() {
     let mut app = App {
         ca: CA::new(2, 2, 0).unwrap(),
         cell_size: 5,
+        rule: 22,
 
         gl: GlGraphics::new(opengl),
         color: Rgb::new(1.0, 0.0, 0.0),
@@ -129,6 +145,13 @@ fn main() {
 
         if let Some(u) = e.update_args() {
             app.update(&u);
+        }
+
+        if let Some(k) = e.press_args() {
+            match k {
+                Keyboard(key) => app.key_pressed(&key),
+                _ => {}
+            }
         }
     }
 }
